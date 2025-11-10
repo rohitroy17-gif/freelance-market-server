@@ -1,12 +1,14 @@
-const express = require('express')
+const express = require('express');
 const cors = require('cors');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express()
 const port = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json())
-const uri = "mongodb+srv://freelance:Rohit@50521@cluster0.4yiiw4x.mongodb.net/?appName=Cluster0";
+
+// Your working URI (no need to change it)
+const uri = "mongodb+srv://freelance:CYopzocONsR09pUy@cluster0.4yiiw4x.mongodb.net/?appName=Cluster0";
 
 const client = new MongoClient(uri, {
   serverApi: {
@@ -25,22 +27,33 @@ async function run() {
   try {
     await client.connect();
 
-    const db = client.db('freelance_db');
-    const productsCollection = db.collection('products');
+    const db = client.db("freelance_db");
+    const productsCollection = db.collection("products");
 
-    app.post('/products',async(req,res)=>{
-        const newProduct=req.body;
-        const result= await productsCollection.insertOne(newProduct)
-        res.send(result);
-    })
+    // ✅ GET all products
+    app.get('/products', async(req, res) => {
+      const result = await productsCollection.find().toArray();
+      res.send(result);
+    });
+
+    // ✅ POST add new product
+    app.post('/products', async(req, res) => {
+      const newProduct = req.body;
+      const result = await productsCollection.insertOne(newProduct);
+      res.send(result);
+    });
+
+    app.delete('/products/:id', (req, res) => {
+      const id =req.params.id;
+    });
 
 
     await client.db("admin").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
-  } finally {
-    
-  }
+    console.log("MongoDB connected successfully!");
+
+  } finally { }
 }
+
 run().catch(console.dir);
 
 
