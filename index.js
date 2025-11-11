@@ -105,5 +105,5 @@ async function run() {
 run().catch(console.dir);
 
 app.get('/', (req, res) => res.send('✅ Freelance Marketplace server is running'));
-app.listen(port, () => console.log(`🚀 Server running on port ${port}`));
+app.listen(port, () => console.log(`🚀 Server are running on port ${port}`));
 
