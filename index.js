@@ -18,14 +18,14 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     await client.connect();
-    console.log("MongoDB connected successfully!");
+    console.log("✅ MongoDB connected successfully!");
 
     const db = client.db("freelance_db");
     const jobsCollection = db.collection("jobs");
 
-    // Get all jobs (latest first)
+    // Get all jobs (sorted)
     app.get('/jobs', async (req, res) => {
-      const jobs = await jobsCollection.find().sort({ _id: -1 }).toArray();
+      const jobs = await jobsCollection.find().sort({ postedAt: -1 }).toArray();
       res.send(jobs);
     });
 
@@ -39,30 +39,42 @@ async function run() {
     // Add new job
     app.post('/jobs', async (req, res) => {
       const newJob = req.body;
-      newJob.acceptedUsers = []; // initialize acceptedUsers array
+
+      newJob.acceptedUsers = [];
+      newJob.postedAt = new Date(); // store actual timestamp
+
       const result = await jobsCollection.insertOne(newJob);
       res.send(result);
     });
 
-    // Accept a job (add userEmail to acceptedUsers array)
+    // Accept a job
     app.post('/jobs/accept/:id', async (req, res) => {
       const id = req.params.id;
       const { userEmail } = req.body;
+
+      const job = await jobsCollection.findOne({ _id: new ObjectId(id) });
+
+      // Prevent user from accepting their own job
+      if (job.userEmail === userEmail) {
+        return res.status(403).send({ message: "You cannot accept your own job" });
+      }
+
       const result = await jobsCollection.updateOne(
         { _id: new ObjectId(id) },
-        { $addToSet: { acceptedUsers: userEmail } } // prevents duplicates
+        { $addToSet: { acceptedUsers: userEmail } } // no duplicates
       );
+
       res.send(result);
     });
 
-    // Get jobs added by a specific user
+    // My Added Jobs
     app.get('/myAddedJobs', async (req, res) => {
       const email = req.query.email;
       const jobs = await jobsCollection.find({ userEmail: email }).toArray();
       res.send(jobs);
     });
 
-    // Get jobs accepted by a specific user
+    // My Accepted Jobs
     app.get('/myAcceptedTasks', async (req, res) => {
       const email = req.query.email;
       const jobs = await jobsCollection.find({ acceptedUsers: email }).toArray();
@@ -92,6 +104,6 @@ async function run() {
 
 run().catch(console.dir);
 
-app.get('/', (req, res) => res.send('Freelance Marketplace server is running'));
-app.listen(port, () => console.log(`Server running on port ${port}`));
+app.get('/', (req, res) => res.send('✅ Freelance Marketplace server is running'));
+app.listen(port, () => console.log(`🚀 Server running on port ${port}`));
 
